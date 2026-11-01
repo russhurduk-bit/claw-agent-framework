@@ -14,7 +14,7 @@ the answer back — text, voice, images, or documents.
 > This is a sanitized public extract of a personal assistant that ran on the
 > author's server. Private service integrations (banking, a school portal, a
 > home router, etc.) were removed and replaced with a single generic
-> integration example. Everything here is original framework code.
+> integration example. This is a customized assistant code sample, not a framework built entirely from scratch.
 
 ## Highlights
 
