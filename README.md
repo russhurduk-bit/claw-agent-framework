@@ -1,6 +1,6 @@
 # Claw — Telegram-native Multi-Agent Assistant Framework
 
-Claw is a small, production-shaped framework for building a **persistent AI
+Claw is a reference framework for building a **persistent AI
 assistant you talk to over Telegram**. It wraps the [Claude Agent
 SDK](https://www.npmjs.com/package/@anthropic-ai/claude-agent-sdk) in the parts
 a real assistant needs but the SDK doesn't give you: a chat transport, durable
