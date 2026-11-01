@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync, unlinkSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { STORE_DIR, TELEGRAM_BOT_TOKEN } from './config.js';
+import { ALLOWED_CHAT_IDS, STORE_DIR, TELEGRAM_BOT_TOKEN } from './config.js';
 import { initDatabase } from './db.js';
 import { runDecaySweep } from './memory.js';
 import { cleanupOldUploads } from './media.js';
@@ -61,6 +61,11 @@ async function main(): Promise<void> {
 
   if (!TELEGRAM_BOT_TOKEN) {
     logger.error('TELEGRAM_BOT_TOKEN is not set. Copy .env.example to .env and fill it in.');
+    process.exit(1);
+  }
+
+  if (ALLOWED_CHAT_IDS.length === 0) {
+    logger.error('ALLOWED_CHAT_IDS is empty. Set your Telegram chat ID in .env before starting.');
     process.exit(1);
   }
 

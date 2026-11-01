@@ -72,12 +72,14 @@ Requires Node.js 20+. Optional host tools: `ffmpeg`/`ffprobe` (video frames),
 
 ```bash
 npm install
-cp .env.example .env      # fill in TELEGRAM_BOT_TOKEN at minimum
+cp .env.example .env      # fill in TELEGRAM_BOT_TOKEN and ALLOWED_CHAT_IDS
 npm run dev               # or: npm run build && npm start
 ```
 
-On first run leave `ALLOWED_CHAT_IDS` empty, message the bot, send `/chatid`,
-paste your id into `.env`, and restart to lock it down.
+Set `ALLOWED_CHAT_IDS` to your numeric Telegram chat ID before starting. The bot
+refuses to start with an empty allowlist because it can invoke tools on the host.
+The Claude Agent SDK also needs authentication: sign in to Claude Code on the
+host, or set `ANTHROPIC_API_KEY` in the private `.env` file.
 
 ### Bot commands
 
@@ -112,7 +114,7 @@ npm run crew status
 ## Configuration
 
 All configuration is environment-based (`.env`, parsed by `src/env.ts`). See
-`.env.example` for the full list. Only `TELEGRAM_BOT_TOKEN` is required;
+`.env.example` for the full list. `TELEGRAM_BOT_TOKEN` and `ALLOWED_CHAT_IDS` are required;
 everything else (voice, multimodal, crew routing, userbot) is optional and
 degrades gracefully when unset.
 

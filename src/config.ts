@@ -13,7 +13,7 @@ export const STORE_DIR = resolve(PROJECT_ROOT, 'store');
 // Telegram bot (grammY / Bot API)
 export const TELEGRAM_BOT_TOKEN = env['TELEGRAM_BOT_TOKEN'] ?? '';
 // Support both ALLOWED_CHAT_ID (single) and ALLOWED_CHAT_IDS (comma-separated).
-// Empty list = first-run mode (bot replies to everyone until you lock it down).
+// Empty list is invalid: a bot with tool access must never be public by default.
 const rawChatIds = env['ALLOWED_CHAT_IDS'] ?? env['ALLOWED_CHAT_ID'] ?? '';
 export const ALLOWED_CHAT_IDS: string[] = rawChatIds
   .split(',')

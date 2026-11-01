@@ -1,6 +1,7 @@
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { SDKUserMessage } from '@anthropic-ai/claude-agent-sdk';
 import { PROJECT_ROOT } from './config.js';
+import { readEnvFile } from './env.js';
 import { logger } from './logger.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -19,8 +20,10 @@ export interface ImageAttachment {
 
 // --- Agent configuration ---
 
-const AGENT_MODEL = process.env.CLAW_AGENT_MODEL ?? 'claude-sonnet-4-5';
-const FALLBACK_MODEL = process.env.CLAW_FALLBACK_MODEL ?? 'claude-haiku-4-5';
+const SDK_ENV = { ...process.env, ...readEnvFile() };
+delete SDK_ENV.CLAUDECODE;
+const AGENT_MODEL = SDK_ENV.CLAW_AGENT_MODEL ?? 'claude-sonnet-4-5';
+const FALLBACK_MODEL = SDK_ENV.CLAW_FALLBACK_MODEL ?? 'claude-haiku-4-5';
 const MAX_THINKING_TOKENS = 10000;
 const MAX_TURNS = 25;
 
@@ -237,12 +240,8 @@ export async function runAgent(
         // Session resume
         ...(sessionId ? { resume: sessionId } : {}),
 
-        // Pass through the process environment
-        env: {
-          ...Object.fromEntries(
-            Object.entries(process.env).filter(([k]) => k !== 'CLAUDECODE')
-          ),
-        },
+        // Pass shell credentials and non-secret project configuration to the SDK.
+        env: SDK_ENV,
 
         // Hook: record which tools were used, for telemetry / debugging
         hooks: {

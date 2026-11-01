@@ -16,7 +16,7 @@ import { transcribeAudio, synthesizeSpeech, voiceCapabilities } from './voice.js
 import { downloadMedia, buildDocumentMessage, buildVideoNoteMessage } from './media.js';
 import { enrichMessageWithYouTube } from './youtube.js';
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { existsSync, statSync, unlinkSync } from 'node:fs';
 import { logger } from './logger.js';
 
@@ -125,7 +125,6 @@ export function splitMessage(text: string, limit = MAX_MESSAGE_LENGTH): string[]
 // --- Auth check ---
 
 function isAuthorised(chatId: number): boolean {
-  if (ALLOWED_CHAT_IDS.length === 0) return true; // first-run mode: reply to everyone
   return ALLOWED_CHAT_IDS.includes(String(chatId));
 }
 
@@ -217,8 +216,8 @@ async function handleMessage(
 function extractVideoFrames(videoPath: string, count = 3): string[] {
   const frames: string[] = [];
   try {
-    const durationStr = execSync(
-      `ffprobe -v error -show_entries format=duration -of csv=p=0 "${videoPath}"`,
+    const durationStr = execFileSync(
+      'ffprobe', ['-v', 'error', '-show_entries', 'format=duration', '-of', 'csv=p=0', videoPath],
       { encoding: 'utf8', timeout: 10000 }
     ).trim();
     const duration = parseFloat(durationStr) || 5;
@@ -227,9 +226,9 @@ function extractVideoFrames(videoPath: string, count = 3): string[] {
       const timestamp = (duration * (i + 1)) / (count + 1);
       const framePath = `/tmp/frame_${Date.now()}_${i}.jpg`;
       try {
-        execSync(
-          `ffmpeg -y -ss ${timestamp.toFixed(2)} -i "${videoPath}" -frames:v 1 -q:v 2 "${framePath}" 2>/dev/null`,
-          { timeout: 15000 }
+        execFileSync(
+          'ffmpeg', ['-y', '-ss', timestamp.toFixed(2), '-i', videoPath, '-frames:v', '1', '-q:v', '2', framePath],
+          { timeout: 15000, stdio: 'ignore' }
         );
         if (existsSync(framePath) && statSync(framePath).size > 0) {
           frames.push(framePath);
@@ -246,7 +245,7 @@ function extractVideoFrames(videoPath: string, count = 3): string[] {
 
 // Strip metadata (EXIF etc.) from a file in place. Requires `exiftool` on the host.
 function stripMetadata(filePath: string): void {
-  execSync(`exiftool -all= -overwrite_original "${filePath}"`, { timeout: 10000 });
+  execFileSync('exiftool', ['-all=', '-overwrite_original', filePath], { timeout: 10000 });
 }
 
 const CLEAN_TRIGGER = /clean|metadata|exif|strip|очист|метаданн|мета|убери/i;
@@ -256,6 +255,9 @@ const CLEAN_TRIGGER = /clean|metadata|exif|strip|очист|метаданн|м�
 export function createBot(): Bot {
   if (!TELEGRAM_BOT_TOKEN) {
     throw new Error('TELEGRAM_BOT_TOKEN is not set. Copy .env.example to .env and fill it in.');
+  }
+  if (ALLOWED_CHAT_IDS.length === 0) {
+    throw new Error('ALLOWED_CHAT_IDS must contain at least one trusted Telegram chat ID.');
   }
 
   const bot = new Bot(TELEGRAM_BOT_TOKEN);
@@ -268,6 +270,12 @@ export function createBot(): Bot {
       text: ctx.message?.text?.slice(0, 50),
       type: ctx.message ? 'message' : 'other',
     }, 'Incoming update');
+    await next();
+  });
+
+  // Apply access control before every command, message and callback handler.
+  bot.use(async (ctx, next) => {
+    if (!ctx.chat || !isAuthorised(ctx.chat.id)) return;
     await next();
   });
 
